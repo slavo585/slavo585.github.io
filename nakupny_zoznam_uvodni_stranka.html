@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="sk">
+<head>
+    <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;700&display=swap" rel="stylesheet">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nákupný zoznam</title>
+    <style>
+        /* Zachovaný štýl podľa pôvodného kódu */
+        body {
+            font-family: 'Open Sans', sans-serif;
+            background-image: url(3840x2479-summer-fresh-organic-vegetables-fruits-stock-photo-13-freedesignfile.summer-fresh-organic-vegetables-fruits-stock-photo-13.jpg);
+            /*background-color: #f4f4f4;*/
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+        .container {
+            position: relative;
+            background-color: rgba(255, 255, 255, 0.1)
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        ul {
+            list-style-type: none;
+            padding: 0;
+        }
+        li {
+            padding: 5px;
+            margin: 5px 0;
+            background-color: #e0e0e0;
+            border-radius: 4px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .completed {
+            text-decoration: line-through;
+            color: grey;
+        }
+        button {
+            margin-top: 20px;
+        }
+        .archive-button {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            z-index: 1000;
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            justify-content: center;
+            align-items: center;
+        }
+        .modal-content {
+            background-color: rgba(255, 255, 255, 0.493);
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            width: 80%;
+            max-width: 600px;
+            backdrop-filter: blur(5px);
+        }
+        .close {
+            color: red;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+        }
+        .close:hover,
+        .close:focus {
+            color: darkred;
+            text-decoration: none;
+            cursor: pointer;
+        }
+        .trash-icon {
+            cursor: pointer;
+            color: red;
+            margin-left: 10px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Nákupný zoznam</h1>
+    <form id="shopping-form">
+        <input type="text" id="item-input" placeholder="Napíš, čo treba kúpiť..." required>
+        <button type="submit">Pridať</button>
+    </form>
+    <ul id="shopping-list"></ul>
+    <button id="clear-list">Vymazať zoznam (a archivovať)</button>
+
+    <!-- Tlačidlo na zobrazenie archívu -->
+    <button class="archive-button" id="archive-button">Archív</button>
+</div>
+
+<!-- Modálne okno pre archív -->
+<div id="archive-modal" class="modal">
+    <div class="modal-content">
+        <span class="close" id="close-modal">&times;</span>
+        <h2>Archivované zoznamy</h2>
+        <ul id="archive-list"></ul>
+    </div>
+</div>
+
+<script>
+    const form = document.getElementById('shopping-form');
+    const input = document.getElementById('item-input');
+    const list = document.getElementById('shopping-list');
+    const clearButton = document.getElementById('clear-list');
+    const archiveButton = document.getElementById('archive-button');
+    const archiveModal = document.getElementById('archive-modal');
+    const closeModal = document.getElementById('close-modal');
+    const archiveListElement = document.getElementById('archive-list');
+
+    let shoppingList = [];
+
+    form.addEventListener('submit', function(e) {
+        e.preventDefault();
+        const newItem = { text: input.value, completed: false };
+        shoppingList.push(newItem);
+        renderList();
+        input.value = '';
+    });
+
+    function renderList() {
+        list.innerHTML = '';
+        shoppingList.forEach((item, index) => {
+            const li = document.createElement('li');
+            li.className = item.completed ? 'completed' : '';
+            
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.checked = item.completed;
+            checkbox.addEventListener('change', () => toggleCompleted(index));
+
+            const span = document.createElement('span');
+            span.textContent = item.text;
+
+            const trashIcon = document.createElement('span');
+            trashIcon.innerHTML = '🗑️';
+            trashIcon.className = 'trash-icon';
+            trashIcon.addEventListener('click', () => deleteItem(index));
+
+            li.appendChild(checkbox);
+            li.appendChild(span);
+            li.appendChild(trashIcon);
+            list.appendChild(li);
+        });
+    }
+
+    function toggleCompleted(index) {
+        shoppingList[index].completed = !shoppingList[index].completed;
+        renderList();
+    }
+
+    function deleteItem(index) {
+        shoppingList.splice(index, 1);
+        renderList();
+    }
+
+    clearButton.addEventListener('click', function() {
+        archiveList();
+        shoppingList = [];
+        renderList();
+    });
+
+    function archiveList() {
+        if (shoppingList.length > 0) {
+            const archived = JSON.parse(localStorage.getItem('archivedLists')) || [];
+            archived.push({ date: new Date(), items: shoppingList });
+            localStorage.setItem('archivedLists', JSON.stringify(archived));
+        }
+    }
+
+    archiveButton.addEventListener('click', function() {
+        archiveModal.style.display = 'flex';
+        renderArchivedLists();
+    });
+
+    closeModal.addEventListener('click', function() {
+        archiveModal.style.display = 'none';
+    });
+
+    function renderArchivedLists() {
+        archiveListElement.innerHTML = '';
+        const archived = JSON.parse(localStorage.getItem('archivedLists')) || [];
+        archived.forEach((archive, index) => {
+            const li = document.createElement('li');
+            const date = new Date(archive.date).toLocaleDateString();
+            li.textContent = `Zoznam z ${date}: ${archive.items.map(item => item.text).join(', ')}`;
+
+            const trashIcon = document.createElement('span');
+            trashIcon.innerHTML = '🗑️';
+            trashIcon.className = 'trash-icon';
+            trashIcon.addEventListener('click', () => deleteArchivedList(index));
+
+            li.appendChild(trashIcon);
+            archiveListElement.appendChild(li);
+        });
+    }
+
+    function deleteArchivedList(index) {
+        const archived = JSON.parse(localStorage.getItem('archivedLists')) || [];
+        archived.splice(index, 1);
+        localStorage.setItem('archivedLists', JSON.stringify(archived));
+        renderArchivedLists();
+    }
+
+    window.addEventListener('click', function(event) {
+        if (event.target === archiveModal) {
+            archiveModal.style.display = 'none';
+        }
+    });
+</script>
+
+</body>
+</html>
