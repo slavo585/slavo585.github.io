@@ -136,10 +136,24 @@
 
     let shoppingList = [];
 
+    // Načítanie zoznamu z localStorage pri načítaní stránky
+    window.addEventListener('load', function() {
+        const savedList = localStorage.getItem('shoppingList');
+        if (savedList) {
+            shoppingList = JSON.parse(savedList);
+            renderList();
+        }
+    });
+
+    function saveToLocalStorage() {
+        localStorage.setItem('shoppingList', JSON.stringify(shoppingList));
+    }
+
     form.addEventListener('submit', function(e) {
         e.preventDefault();
         const newItem = { text: input.value, completed: false };
         shoppingList.push(newItem);
+        saveToLocalStorage(); // Uloženie do localStorage
         renderList();
         input.value = '';
     });
@@ -172,17 +186,20 @@
 
     function toggleCompleted(index) {
         shoppingList[index].completed = !shoppingList[index].completed;
+        saveToLocalStorage(); // Uloženie do localStorage
         renderList();
     }
 
     function deleteItem(index) {
         shoppingList.splice(index, 1);
+        saveToLocalStorage(); // Uloženie do localStorage
         renderList();
     }
 
     clearButton.addEventListener('click', function() {
         archiveList();
         shoppingList = [];
+        saveToLocalStorage(); // Uloženie do localStorage
         renderList();
     });
 
