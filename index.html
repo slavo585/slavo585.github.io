@@ -8,7 +8,12 @@
     <style>
         body {
             font-family: 'Open Sans', sans-serif;
-            background-color: #f4f4f4;
+            background-image: url(C:\work\projects\nakupny_zoznam_new\slavo585.github.io\3840x2479-summer-fresh-organic-vegetables-fruits-stock-photo-13-freedesignfile.summer-fresh-organic-vegetables-fruits-stock-photo-13.jpg);
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            margin: 0;
+            padding: 0;
             display: flex;
             justify-content: center;
             align-items: center;
@@ -77,13 +82,18 @@
     }
 
     async function addItemToList(item) {
-        await fetch('http://localhost:3000/api/shopping-list', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ item })
-        });
-        fetchShoppingList();
+    const response = await fetch('http://localhost:3000/api/shopping-list', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ item })
+    });
+
+    if (response.ok) { // Skontroluj, či je odpoveď OK
+        fetchShoppingList(); // Obnov zoznam
+    } else {
+        console.error('Chyba pri pridávaní položky'); // Vytlač chybu
     }
+}
 
     async function toggleCompleted(id) {
         await fetch(`http://localhost:3000/api/shopping-list/${id}`, {
@@ -118,10 +128,14 @@
     }
 
     form.addEventListener('submit', async function (e) {
-        e.preventDefault();
-        await addItemToList(input.value);
-        input.value = '';
-    });
+    e.preventDefault(); // Zabraňuje obnovenie stránky
+    const newItem = input.value.trim(); // Získaj hodnotu z inputu
+
+    if (newItem) { // Ak nie je prázdny
+        await addItemToList(newItem); // Pridaj položku
+        input.value = ''; // Vymaž input
+    }
+});
 
     clearButton.addEventListener('click', clearShoppingList);
 
